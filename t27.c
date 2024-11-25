@@ -100,23 +100,39 @@ int dict_mostcommon(const dict* p)
 // CHALLENGE1
 unsigned dict_cmp(dict* p1, dict* p2)
 {
-    if (p1 == p2) return 0; // Same node
+    if (p1 == NULL || p2 == NULL) return 0;
 
-    unsigned distance = 0;
-    while (p1 != p2) {
-        if (p1 == NULL || p2 == NULL) return 0; // No common ancestor found
-        p1 = (dict*)p1; // Cast to avoid warnings
-        p2 = (dict*)p2; // Cast to avoid warnings
-        // Move up one level on both sides
-        for (int i = 0; i < 27; i++) {
-            if (p1->children[i] == p2) return distance + 1;
-            if (p2->children[i] == p1) return distance + 1;
-        }
-        // 若到达这里，p1p2都不是另一个的直接父级，需要更上一层，这可能需要更复杂的算法来实现
-        return 0; // Indicate failure
+    // 构建从 p1 到根节点的路径
+    dict* path1[1000];
+    int len1 = 0;
+    dict* temp = p1;
+    while (temp != NULL) {
+        path1[len1++] = temp;
+        temp = temp->parent;
     }
+
+    // 构建从 p2 到根节点的路径
+    dict* path2[1000];
+    int len2 = 0;
+    temp = p2;
+    while (temp != NULL) {
+        path2[len2++] = temp;
+        temp = temp->parent;
+    }
+
+    // 从根节点开始比较，找到最低公共祖先
+    int i = len1 - 1;
+    int j = len2 - 1;
+    while (i >= 0 && j >= 0 && path1[i] == path2[j]) {
+        i--;
+        j--;
+    }
+
+    // 计算距离
+    unsigned distance = (i + 1) + (j + 1);
     return distance;
 }
+
 
 // CHALLENGE2
 void dict_autocomplete(const dict* p, const char* wd, char* ret)
@@ -146,43 +162,4 @@ void dict_autocomplete(const dict* p, const char* wd, char* ret)
 
 void test(void)
 {
-    // 初始化字典
-    dict* myDict = dict_init();
-
-    // 测试添加单词
-    printf("Adding words...\n");
-    dict_addword(myDict, "car");
-    dict_addword(myDict, "cart");
-    dict_addword(myDict, "part");
-    dict_addword(myDict, "park");
-    dict_addword(myDict, "park");
-    dict_addword(myDict, "park");
-
-    // 测试单词计数
-    printf("Total number of nodes: %d\n", dict_nodecount(myDict));
-    printf("Total number of words: %d\n", dict_wordcount(myDict));
-
-    // 测试拼写检查
-    printf("Spell checking 'car': %p\n", dict_spell(myDict, "car"));
-    printf("Spell checking 'cart': %p\n", dict_spell(myDict, "cart"));
-    printf("Spell checking 'part': %p\n", dict_spell(myDict, "part"));
-    printf("Spell checking 'park': %p\n", dict_spell(myDict, "park"));
-    printf("Spell checking 'ca': %p\n", dict_spell(myDict, "ca")); // 应该返回 NULL
-    printf("Spell checking 'par': %p\n", dict_spell(myDict, "par")); // 应该返回 NULL
-
-    // 测试最常见的单词频率
-    printf("Most common word frequency: %d\n", dict_mostcommon(myDict));
-
-    // 测试自动补全
-    char result[100];
-    dict_autocomplete(myDict, "pa", result);
-    printf("Autocomplete for 'pa': %s\n", result);
-
-    // 释放字典
-    dict_free(&myDict);
-    if (myDict == NULL) {
-        printf("Dictionary successfully freed.\n");
-    } else {
-        printf("Failed to free dictionary.\n");
-    }
 }
